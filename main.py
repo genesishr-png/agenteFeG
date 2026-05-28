@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 import shutil
 import logging
 from pathlib import Path
@@ -75,25 +76,39 @@ def main():
     zips_to_cleanup = []
     temp_dirs_to_cleanup = []
     
-    # 1. Varre arquivos de entrada, tratando ZIPs primeiro
-    for item in list(input_dir.iterdir()):
-        if not item.is_file() or item.name.lower() in ignored_names or item.suffix.lower() in ignored_extensions:
+    # Resolve caminhos para evitar colisões
+    abs_input_dir = input_dir.resolve()
+    abs_output_dir = output_dir.resolve()
+    
+    # 1. Varre arquivos de entrada recursivamente, tratando ZIPs primeiro
+    for root, dirs, files in os.walk(abs_input_dir):
+        current_dir = Path(root).resolve()
+        
+        # Ignora a pasta de resultado (output_dir) e qualquer subpasta dela
+        if abs_output_dir == current_dir or abs_output_dir in current_dir.parents:
             continue
             
-        if item.suffix.lower() == ".zip":
-            logger.info(f"Detectado arquivo compactado: '{item.name}'. Descompactando...")
-            extracted = DocumentExtractor.extract_zip(item, input_dir)
-            if extracted:
-                files_to_process.extend(extracted)
-                zips_to_cleanup.append(item)
-                # O diretório temporário é a pasta pai do primeiro arquivo extraído
-                temp_dirs_to_cleanup.append(extracted[0].parent)
-                logger.info(f"Extraídos {len(extracted)} arquivos do zip '{item.name}'.")
+        for f in files:
+            if f.lower() in ignored_names:
+                continue
+            file_path = current_dir / f
+            if file_path.suffix.lower() in ignored_extensions:
+                continue
+                
+            if file_path.suffix.lower() == ".zip":
+                logger.info(f"Detectado arquivo compactado: '{file_path.name}'. Descompactando...")
+                extracted = DocumentExtractor.extract_zip(file_path, current_dir)
+                if extracted:
+                    files_to_process.extend(extracted)
+                    zips_to_cleanup.append(file_path)
+                    # O diretório temporário é a pasta pai do primeiro arquivo extraído
+                    temp_dirs_to_cleanup.append(extracted[0].parent)
+                    logger.info(f"Extraídos {len(extracted)} arquivos do zip '{file_path.name}'.")
+                else:
+                    logger.warning(f"Nenhum arquivo válido extraído do zip '{file_path.name}'.")
             else:
-                logger.warning(f"Nenhum arquivo válido extraído do zip '{item.name}'.")
-        else:
-            files_to_process.append(item)
-            
+                files_to_process.append(file_path)
+                
     if not files_to_process:
         logger.info(f"Nenhum arquivo elegível para processamento encontrado em: {input_dir}")
         logger.info("=== Processamento concluído (0 arquivos) ===")
