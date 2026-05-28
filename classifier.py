@@ -146,10 +146,11 @@ Instruções Adicionais:
         
         for attempt in range(max_retries):
             try:
-                response = self.gemini_model.generate_content(
+                # Instancia o modelo com a instrução do sistema para compatibilidade com versões antigas do SDK do Gemini
+                model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_instruction)
+                response = model.generate_content(
                     contents=contents,
-                    generation_config=generation_config,
-                    system_instruction=system_instruction
+                    generation_config=generation_config
                 )
                 # Converte a resposta JSON em objeto Pydantic
                 data = json.loads(response.text)
