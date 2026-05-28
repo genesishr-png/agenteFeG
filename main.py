@@ -3,7 +3,11 @@ import sys
 import os
 import shutil
 import logging
+import warnings
 from pathlib import Path
+
+# Silencia todos os avisos de depreciação/futuros de bibliotecas externas
+warnings.filterwarnings("ignore")
 
 # Configuração do Logging (Configurado no início para que todos os imports enviem logs para stdout)
 logging.basicConfig(
