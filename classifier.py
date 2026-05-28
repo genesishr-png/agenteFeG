@@ -25,7 +25,7 @@ class DocumentClassifier:
         # Inicializa o Gemini
         if config.GEMINI_API_KEY and config.GEMINI_API_KEY != "sua_chave_do_gemini_aqui":
             genai.configure(api_key=config.GEMINI_API_KEY)
-            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+            self.gemini_model = genai.GenerativeModel('gemini-2.5-flash')
         else:
             self.gemini_model = None
             logger.warning("Gemini API key não configurada. O classificador Gemini não estará disponível.")
@@ -147,7 +147,7 @@ Instruções Adicionais:
         for attempt in range(max_retries):
             try:
                 # Instancia o modelo com a instrução do sistema para compatibilidade com versões antigas do SDK do Gemini
-                model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_instruction)
+                model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=system_instruction)
                 response = model.generate_content(
                     contents=contents,
                     generation_config=generation_config
