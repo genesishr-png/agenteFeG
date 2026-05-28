@@ -116,7 +116,10 @@ Instruções Adicionais:
         )
 
     def _classify_with_gemini(self, file_path: Path, extracted_text: str, is_scanned: bool, mime_type: str, system_instruction: str) -> ClassificationResult:
-        """Chama a API do Gemini Flash."""
+        """Chama a API do Gemini Flash com tratamento de Rate Limit (HTTP 429 / ResourceExhausted)."""
+        import time
+        from google.api_core.exceptions import ResourceExhausted, GoogleAPICallError
+        
         contents = []
         
         if is_scanned:
@@ -138,15 +141,29 @@ Instruções Adicionais:
             response_schema=ClassificationResult
         )
 
-        response = self.gemini_model.generate_content(
-            contents=contents,
-            generation_config=generation_config,
-            system_instruction=system_instruction
-        )
+        max_retries = 5
+        backoff_factor = 3
         
-        # Converte a resposta JSON em objeto Pydantic
-        data = json.loads(response.text)
-        return ClassificationResult(**data)
+        for attempt in range(max_retries):
+            try:
+                response = self.gemini_model.generate_content(
+                    contents=contents,
+                    generation_config=generation_config,
+                    system_instruction=system_instruction
+                )
+                # Converte a resposta JSON em objeto Pydantic
+                data = json.loads(response.text)
+                return ClassificationResult(**data)
+            except (ResourceExhausted, GoogleAPICallError) as e:
+                # Verifica se é rate limit e faz retry
+                if attempt < max_retries - 1:
+                    sleep_time = (attempt + 1) * backoff_factor + 2
+                    logger.warning(f"Rate Limit do Gemini atingido para '{file_path.name}'. Tentativa {attempt + 1}/{max_retries}. Aguardando {sleep_time}s...")
+                    time.sleep(sleep_time)
+                else:
+                    raise e
+            except Exception as e:
+                raise e
 
     def _classify_with_claude(self, file_name: str, text_content: str, system_instruction: str) -> ClassificationResult:
         """Chama a API do Claude 3.5 Sonnet."""
