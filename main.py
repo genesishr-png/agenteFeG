@@ -5,12 +5,7 @@ import shutil
 import logging
 from pathlib import Path
 
-import config
-from extractor import DocumentExtractor
-from classifier import DocumentClassifier
-from router import FileRouter
-
-# Configuração do Logging
+# Configuração do Logging (Configurado no início para que todos os imports enviem logs para stdout)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -18,6 +13,12 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
+
+import config
+from extractor import DocumentExtractor
+from classifier import DocumentClassifier
+from router import FileRouter
+
 logger = logging.getLogger("AgenteRAG")
 
 def parse_args():
