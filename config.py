@@ -2,11 +2,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Carrega variáveis do arquivo .env
-load_dotenv()
-
 # Caminho Base do Projeto
 BASE_DIR = Path(__file__).resolve().parent
+
+# Carrega variáveis do arquivo .env
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 # Chaves de API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
